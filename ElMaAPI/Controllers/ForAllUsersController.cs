@@ -208,6 +208,19 @@ public class ForAllUsersController : ControllerBase
        return books;
    }
    
+   //поиск книги по названию в реальном времени
+   [HttpGet("search")]
+   public async Task<ActionResult<IEnumerable<Book>>> SearchBooks(string searchTerm)
+   {
+       // Используем LINQ для выполнения поиска книги по названию
+       var result =  _context.Books
+           .AsEnumerable()
+           .Where(book => book.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+           .ToList();
+
+       return Ok(result);
+   }
+   
 
    //методы вывода изображения
    //метод возвращающий байты изображения
