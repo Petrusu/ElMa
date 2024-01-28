@@ -257,6 +257,22 @@ public class ForAllUsersController : ControllerBase
 
        return Ok("Книга добавлена в избранное.");
    }
+   //удаляем книгу из избранного
+   [HttpDelete("removebookfromfavorites")]
+   public async Task<IActionResult> DeleteBookFromFavarite(int idBook)
+   {
+       var book =  _context.Favorites.FirstOrDefault(b => b.BookId == idBook); //находим книгу по id
+
+       if (book == null)
+       {
+           return NotFound("Book not found"); // Если пользователь с указанным id не найден, возвращаем 404 Not Found
+       }
+
+       _context.Favorites.Remove(book); //удаляем
+       await _context.SaveChangesAsync(); //сохраняем
+
+       return Ok("Book delited"); 
+   }
 
    //методы вывода изображения
    //метод возвращающий байты изображения

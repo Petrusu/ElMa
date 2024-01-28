@@ -261,8 +261,55 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
         }
     }
 }
+    //удаление книги
+    [HttpPost("DeleteBook")]
+    public IActionResult DeleteBook([FromQuery] int bookId)
+    {
+        try
+        {
+            // Найти книгу по идентификатору
+            Book existingBook = _context.Books.Find(bookId);
 
-private void UpdateBookAuthor(Book existingBook, string authorName)
+            if (existingBook == null)
+            {
+                return NotFound("Книга не найдена");
+            }
+
+            // Удалить связи с авторами
+            var bookAuthors = _context.BookAuthors.Where(ba => ba.BookId == existingBook.BookId).ToList();
+            foreach (var bookAuthor in bookAuthors)
+            {
+                _context.BookAuthors.Remove(bookAuthor);
+            }
+
+            // Удалить связи с редакторами
+            var bookEditors = _context.BookEditors.Where(be => be.BookId == existingBook.BookId).ToList();
+            foreach (var bookEditor in bookEditors)
+            {
+                _context.BookEditors.Remove(bookEditor);
+            }
+
+            // Удалить связи с темами
+            var bookThemes = _context.BookThemes.Where(bt => bt.BookId == existingBook.BookId).ToList();
+            foreach (var bookTheme in bookThemes)
+            {
+                _context.BookThemes.Remove(bookTheme);
+            }
+
+            // Удалить книгу
+            _context.Books.Remove(existingBook);
+
+            // Сохранить изменения в базе данных
+            _context.SaveChanges();
+
+            return Ok("Книга удалена!");
+        }
+        catch (Exception e)
+        {
+            return BadRequest("Произошла ошибка:" + e);
+        }
+    }
+    private void UpdateBookAuthor(Book existingBook, string authorName)
 {
     Author author = _context.Authors.FirstOrDefault(a => a.Authorsname == authorName);
 
@@ -356,54 +403,6 @@ private void UpdateBookThemes(Book existingBook, List<string> themeNames)
         _context.BookThemes.Add(bookTheme);
     }
 }
-    //удаление книги
-    [HttpPost("DeleteBook")]
-    public IActionResult DeleteBook([FromQuery] int bookId)
-    {
-        try
-        {
-            // Найти книгу по идентификатору
-            Book existingBook = _context.Books.Find(bookId);
-
-            if (existingBook == null)
-            {
-                return NotFound("Книга не найдена");
-            }
-
-            // Удалить связи с авторами
-            var bookAuthors = _context.BookAuthors.Where(ba => ba.BookId == existingBook.BookId).ToList();
-            foreach (var bookAuthor in bookAuthors)
-            {
-                _context.BookAuthors.Remove(bookAuthor);
-            }
-
-            // Удалить связи с редакторами
-            var bookEditors = _context.BookEditors.Where(be => be.BookId == existingBook.BookId).ToList();
-            foreach (var bookEditor in bookEditors)
-            {
-                _context.BookEditors.Remove(bookEditor);
-            }
-
-            // Удалить связи с темами
-            var bookThemes = _context.BookThemes.Where(bt => bt.BookId == existingBook.BookId).ToList();
-            foreach (var bookTheme in bookThemes)
-            {
-                _context.BookThemes.Remove(bookTheme);
-            }
-
-            // Удалить книгу
-            _context.Books.Remove(existingBook);
-
-            // Сохранить изменения в базе данных
-            _context.SaveChanges();
-
-            return Ok("Книга удалена!");
-        }
-        catch (Exception e)
-        {
-            return BadRequest("Произошла ошибка:" + e);
-        }
-    }
     //метод для сохранения изображения, возвращает имя изображения
     private async Task<string> WriteFile(IFormFile file)
     {
