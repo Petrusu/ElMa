@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using System.Net.Mail;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ElMaAPI.Controllers;
 [ApiController]
@@ -220,7 +221,42 @@ public class ForAllUsersController : ControllerBase
 
        return Ok(result);
    }
-   
+   //вывод избранного
+   [HttpGet("Favorite")]
+   [Authorize]
+   public OkObjectResult GetFavoriteBooksByUserId()
+   {
+       int userId = GetUserIdFromToken();
+
+       var favoriteBooks = _context.Favorites
+           .Where(f => f.UserId == userId) // Фильтрация по UserId
+           .Include(f => f.Book) // Предзагрузка связанной сущности Book
+           .Select(f => new
+           {
+               IdBook = f.Book.BookId,
+               Title = f.Book.Title,
+           })
+           .ToList();
+
+       return Ok(favoriteBooks);
+   }
+   //добавление книги в избранное
+   [HttpPost("addbookforfavorite")]
+   public IActionResult AddBookForFavorite(int idBook)
+   {
+
+       int idUser = GetUserIdFromToken(); //получаем id пользователя из токена
+       Favorite favoriteModel = new Favorite //экземпляр класса избранного
+       {
+           UserId = idUser,
+           BookId = idBook
+       };
+
+       _context.Favorites.Add(favoriteModel); //добавляем 
+       _context.SaveChanges(); //сохраняем
+
+       return Ok("Книга добавлена в избранное.");
+   }
 
    //методы вывода изображения
    //метод возвращающий байты изображения
