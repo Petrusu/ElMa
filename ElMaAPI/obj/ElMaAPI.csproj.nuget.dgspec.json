@@ -42,6 +42,18 @@
               "target": "Package",
               "version": "[0.1.0, )"
             },
+            "FirebaseAdmin": {
+              "target": "Package",
+              "version": "[2.4.0, )"
+            },
+            "FirebaseStorage.net": {
+              "target": "Package",
+              "version": "[1.0.3, )"
+            },
+            "Google.Cloud.Storage.V1": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
             "HiNetCloud.Microsoft.IdentityModel.JsonWebTokens": {
               "target": "Package",
               "version": "[23.10.8.15, )"

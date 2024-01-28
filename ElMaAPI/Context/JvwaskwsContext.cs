@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ElMaAPI.Context;
 
-public partial class AryvulsiContext : DbContext
+public partial class JvwaskwsContext : DbContext
 {
-    public AryvulsiContext()
+    public JvwaskwsContext()
     {
     }
 
-    public AryvulsiContext(DbContextOptions<AryvulsiContext> options)
+    public JvwaskwsContext(DbContextOptions<JvwaskwsContext> options)
         : base(options)
     {
     }
@@ -40,9 +40,13 @@ public partial class AryvulsiContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<Userrole> Userroles { get; set; }
+
+    public virtual DbSet<Verifycode> Verifycodes { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Server=balarama.db.elephantsql.com;Database=aryvulsi;Username=aryvulsi;password=cOsPdJ9RXqYGaicLSf_DoYih0PPc2LC4");
+        => optionsBuilder.UseNpgsql("Server=balarama.db.elephantsql.com;Database=jvwaskws;Username=jvwaskws;Password=mVMe_Cq431qfgIV8x_QhdKOaG-0hDKKm");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,7 +95,7 @@ public partial class AryvulsiContext : DbContext
 
             entity.Property(e => e.BbkId).HasColumnName("bbk_id");
             entity.Property(e => e.BbkCode)
-                .HasMaxLength(10)
+                .HasColumnType("character varying")
                 .HasColumnName("bbk_code");
         });
 
@@ -132,55 +136,64 @@ public partial class AryvulsiContext : DbContext
 
         modelBuilder.Entity<BookAuthor>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("book_authors");
+            entity.HasKey(e => new { e.BookId, e.AuthorsId }).HasName("book_authors_pkey");
 
-            entity.Property(e => e.AuthorsId).HasColumnName("authors_id");
+            entity.ToTable("book_authors");
+
             entity.Property(e => e.BookId).HasColumnName("book_id");
+            entity.Property(e => e.AuthorsId).HasColumnName("authors_id");
+            entity.Property(e => e.Note).HasColumnName("note");
 
-            entity.HasOne(d => d.Authors).WithMany()
+            entity.HasOne(d => d.Authors).WithMany(p => p.BookAuthors)
                 .HasForeignKey(d => d.AuthorsId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_authors_authors_id_fkey");
 
-            entity.HasOne(d => d.Book).WithMany()
+            entity.HasOne(d => d.Book).WithMany(p => p.BookAuthors)
                 .HasForeignKey(d => d.BookId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_authors_book_id_fkey");
         });
 
         modelBuilder.Entity<BookEditor>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("book_editor");
+            entity.HasKey(e => new { e.BookId, e.EditorsId }).HasName("book_editor_pkey");
+
+            entity.ToTable("book_editor");
 
             entity.Property(e => e.BookId).HasColumnName("book_id");
             entity.Property(e => e.EditorsId).HasColumnName("editors_id");
+            entity.Property(e => e.Note).HasColumnName("note");
 
-            entity.HasOne(d => d.Book).WithMany()
+            entity.HasOne(d => d.Book).WithMany(p => p.BookEditors)
                 .HasForeignKey(d => d.BookId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_editor_book_id_fkey");
 
-            entity.HasOne(d => d.Editors).WithMany()
+            entity.HasOne(d => d.Editors).WithMany(p => p.BookEditors)
                 .HasForeignKey(d => d.EditorsId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_editor_editors_id_fkey");
         });
 
         modelBuilder.Entity<BookTheme>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("book_themes");
+            entity.HasKey(e => new { e.BookId, e.ThemesId }).HasName("book_themes_pkey");
+
+            entity.ToTable("book_themes");
 
             entity.Property(e => e.BookId).HasColumnName("book_id");
             entity.Property(e => e.ThemesId).HasColumnName("themes_id");
+            entity.Property(e => e.Note).HasColumnName("note");
 
-            entity.HasOne(d => d.Book).WithMany()
+            entity.HasOne(d => d.Book).WithMany(p => p.BookThemes)
                 .HasForeignKey(d => d.BookId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_themes_book_id_fkey");
 
-            entity.HasOne(d => d.Themes).WithMany()
+            entity.HasOne(d => d.Themes).WithMany(p => p.BookThemes)
                 .HasForeignKey(d => d.ThemesId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("book_themes_themes_id_fkey");
         });
 
@@ -198,19 +211,22 @@ public partial class AryvulsiContext : DbContext
 
         modelBuilder.Entity<Favorite>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("favorites");
+            entity.HasKey(e => new { e.BookId, e.UserId }).HasName("favorites_pkey");
+
+            entity.ToTable("favorites");
 
             entity.Property(e => e.BookId).HasColumnName("book_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Note).HasColumnName("note");
 
-            entity.HasOne(d => d.Book).WithMany()
+            entity.HasOne(d => d.Book).WithMany(p => p.Favorites)
                 .HasForeignKey(d => d.BookId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("favorites_book_id_fkey");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.Favorites)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("favorites_user_id_fkey");
         });
 
@@ -256,8 +272,6 @@ public partial class AryvulsiContext : DbContext
 
             entity.ToTable("users");
 
-            entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
-
             entity.HasIndex(e => e.Username, "users_username_key").IsUnique();
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -270,6 +284,34 @@ public partial class AryvulsiContext : DbContext
             entity.Property(e => e.Userpassword)
                 .HasMaxLength(255)
                 .HasColumnName("userpassword");
+            entity.Property(e => e.Userrole).HasColumnName("userrole");
+
+            entity.HasOne(d => d.UserroleNavigation).WithMany(p => p.Users)
+                .HasForeignKey(d => d.Userrole)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("users_userrole_fkey");
+        });
+
+        modelBuilder.Entity<Userrole>(entity =>
+        {
+            entity.HasKey(e => e.RoleId).HasName("userrole_pkey");
+
+            entity.ToTable("userrole");
+
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.Rolename)
+                .HasMaxLength(16)
+                .HasColumnName("rolename");
+        });
+
+        modelBuilder.Entity<Verifycode>(entity =>
+        {
+            entity.HasKey(e => e.CodeId).HasName("verifycode_pkey");
+
+            entity.ToTable("verifycode");
+
+            entity.Property(e => e.CodeId).HasColumnName("code_id");
+            entity.Property(e => e.Code).HasColumnName("code");
         });
 
         OnModelCreatingPartial(modelBuilder);
