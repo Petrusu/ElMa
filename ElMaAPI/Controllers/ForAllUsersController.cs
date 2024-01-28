@@ -193,6 +193,21 @@ public class ForAllUsersController : ControllerBase
        });
        return Ok(editorData);
    }
+   //сортировка А -> я
+   [HttpGet("BooksTitleOrderBy")]
+   public async Task<ActionResult<IEnumerable<Book>>> GetBooksOrderBy()
+   {
+       var books = await _context.Books.OrderBy(b => b.Title).ToListAsync();
+       return books;
+   }
+   //сортировка Я -> а
+   [HttpGet("BooksTitleOrderByDescending")]
+   public async Task<ActionResult<IEnumerable<Book>>> GetBooksOrderByDescending()
+   {
+       var books = await _context.Books.OrderByDescending(b => b.Title).ToListAsync();
+       return books;
+   }
+   
 
    //методы вывода изображения
    //метод возвращающий байты изображения
