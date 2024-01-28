@@ -284,6 +284,78 @@ public class ForAllUsersController : ControllerBase
        //читаем байты изображения
        return System.IO.File.ReadAllBytes(imagePath);
    }
+   //запрос на изменения пароля
+   [HttpPut("changepassword")]
+   public IActionResult ChangePassword(string password)
+   {
+       int id = GetUserIdFromToken();
+       // Проверяем, существует ли пользователь
+       var user = _context.Users.FirstOrDefault(u => u.UserId == id);
+       if (user == null)
+       {
+           return Unauthorized(); // Пользователь не найден
+       }
+
+       // Шифрование пароля
+       string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+       user.Userpassword = hashedPassword;
+       _context.SaveChanges(); //сохранение нового пароля
+
+       // Отправка сообщения с кодом на почту
+       SendMessage(user.Username, user.Email);
+
+       return Ok("Пароль изменен");
+   }
+
+    //изменения email
+   [HttpPut("changeemail")]
+   public IActionResult ChangeEmail(string email)
+   {
+       int id = GetUserIdFromToken();
+       // Проверяем, существует ли пользователь
+       var user = _context.Users.FirstOrDefault(u => u.UserId == id);
+       if (user == null)
+       {
+           return Unauthorized(); // Пользователь не найден
+       }
+
+       user.Email = email;
+
+       _context.SaveChanges(); //сохранение нового мыла
+
+       // Отправка сообщения с кодом на почту
+       SendMessage(user.Username, email);
+
+       return Ok("Почта изменена");
+   }
+
+    //изменение логина
+   [HttpPut("changelogin")]
+   public IActionResult ChangeLogin(string login)
+   {
+       int id = GetUserIdFromToken();
+       // Проверяем, существует ли пользователь
+       var user = _context.Users.FirstOrDefault(u => u.UserId == id);
+       if (user == null)
+       {
+           return Unauthorized(); // Пользователь не найден
+       }
+
+       // Проверяем, что новый логин не совпадает ни с одним из существующих логинов
+       var existingUser = _context.Users.FirstOrDefault(u => u.Username == login);
+       if (existingUser != null)
+       {
+           return BadRequest("Такой логин уже существует"); // Логин уже существует
+       }
+
+       user.Username = login;
+       _context.SaveChanges(); //сохранение нового логина
+
+       // Отправка сообщения с котом на почту
+       SendMessage(login, user.Email);
+
+       return Ok("Логин изменен");
+   }
    
    
     //методы для почты
