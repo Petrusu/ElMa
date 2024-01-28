@@ -110,6 +110,56 @@ public class ForAllUsersController : ControllerBase
         }
     }
     
+   //вывод книг 
+   [HttpGet("fillbook")]
+   public IActionResult GetAllBooks()
+   {
+       var allBooks = _context.Books
+           .Include(b => b.BbkCodeNavigation)
+           .Include(b => b.PlaceOfPublicationNavigation)
+           .Include(b => b.PublisherNavigation)
+           .Include(b => b.BookAuthors)
+           .ThenInclude(ba => ba.Authors)
+           .Include(b => b.BookEditors)
+           .ThenInclude(be => be.Editors)
+           .Include(b => b.BookThemes)
+           .ThenInclude(bt => bt.Themes)
+           .ToList();
+
+       if (allBooks.Count == 0)
+       {
+           return NotFound(); // Книги не найдены
+       }
+       
+       var booksData = allBooks.Select(book => new
+       {
+           Title = book.Title,
+           SeriesName = book.SeriesName,
+           Annotation = book.Annotation,
+           Publisher = book.PublisherNavigation.Publishersname,
+           Image = GetImageData(book.Image),
+           Authors = book.BookAuthors.Select(ba => new {Authorsname = ba.Authors.Authorsname}),
+           Editors = book.BookEditors.Select(be => new {Editorname = be.Editors.Editorname}),
+           Themes = book.BookThemes.Select(bt => new { Themesname = bt.Themes.Themesname}).ToList()
+       }).ToList();
+
+       return Ok(booksData);
+   }
+   
+   //методы вывода изображения
+   //метод возвращающий байты изображения
+   private byte[] GetImageData(string imageName)
+   {
+       //получаем полный путь к изоброажению
+       string imagePath = Path.Combine("Upload\\Files", imageName);
+
+       //читаем байты изображения
+       return System.IO.File.ReadAllBytes(imagePath);
+   }
+   
+   
+    //методы для почты
+    //метод отправки кода на почту
     private void SendMessage(string login, string email)
     {
         //отправка сообщения на почту
@@ -145,9 +195,9 @@ public class ForAllUsersController : ControllerBase
             }
         }
     }
+    //метод генерации кода
     private int GenerateRandomCode()
     {
-        // Замените это на ваш собственный генератор кодов
         return new Random().Next(1000, 10000);
     }
     
