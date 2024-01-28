@@ -145,7 +145,55 @@ public class ForAllUsersController : ControllerBase
 
        return Ok(booksData);
    }
-   
+   //вывод тем
+   [HttpGet("fillthemes")]
+   public IActionResult GetAllThemes()
+   {
+       var allthemes = _context.Themes.ToList();
+       if (allthemes.Count == null)
+       {
+           return NotFound(); //темы не найдены
+       }
+
+       var themesData = allthemes.Select(theme => new
+       {
+            theme.Themesname
+       });
+       return Ok(themesData);
+   }
+   //вывод авторов
+   [HttpGet("fillauthors")]
+   public IActionResult GetAllAuthors()
+   {
+       var allauthors = _context.Authors.ToList();
+       if (allauthors.Count == null)
+       {
+           return NotFound(); //авторы не найдены
+       }
+
+       var authorsData = allauthors.Select(author => new
+       {
+           author.Authorsname
+       });
+       return Ok(authorsData);
+   }
+   //вывод редакторов
+   [HttpGet("filleditors")]
+   public IActionResult GetAllEditors()
+   {
+       var alleditors = _context.Editors.ToList();
+       if (alleditors.Count == null)
+       {
+           return NotFound(); //редакторы не найдены
+       }
+
+       var editorData = alleditors.Select(editor => new
+       {
+           editor.Editorname
+       });
+       return Ok(editorData);
+   }
+
    //методы вывода изображения
    //метод возвращающий байты изображения
    private byte[] GetImageData(string imageName)
