@@ -194,33 +194,77 @@ public class ForAllUsersController : ControllerBase
        });
        return Ok(editorData);
    }
-   //сортировка А -> я
-   [HttpGet("BooksTitleOrderBy")]
-   public async Task<ActionResult<IEnumerable<Book>>> GetBooksOrderBy()
-   {
-       var books = await _context.Books.OrderBy(b => b.Title).ToListAsync();
-       return books;
-   }
-   //сортировка Я -> а
-   [HttpGet("BooksTitleOrderByDescending")]
-   public async Task<ActionResult<IEnumerable<Book>>> GetBooksOrderByDescending()
-   {
-       var books = await _context.Books.OrderByDescending(b => b.Title).ToListAsync();
-       return books;
-   }
-   
-   //поиск книги по названию в реальном времени
-   [HttpGet("search")]
-   public async Task<ActionResult<IEnumerable<Book>>> SearchBooks(string searchTerm)
-   {
-       // Используем LINQ для выполнения поиска книги по названию
-       var result =  _context.Books
-           .AsEnumerable()
-           .Where(book => book.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-           .ToList();
+[HttpGet("BooksOrderBy")]
+public async Task<ActionResult<IEnumerable<object>>> GetBooksOrderBy()
+{
+    var allBooks = await GetOrderedBooks("asc").ToListAsync();
+    return ProcessBooks(allBooks);
+}
+[HttpGet("BooksOrderByDescending")]
+public async Task<ActionResult<IEnumerable<object>>> OrderByDescending()
+{
+    var allBooks = await GetOrderedBooks("desc").ToListAsync();
+    return ProcessBooks(allBooks);
+}
 
-       return Ok(result);
-   }
+private IQueryable<Book> GetOrderedBooks(string sortOrder)
+{
+    var orderedBooks = _context.Books
+        .Include(b => b.BbkCodeNavigation)
+        .Include(b => b.PlaceOfPublicationNavigation)
+        .Include(b => b.PublisherNavigation)
+        .Include(b => b.BookAuthors)
+        .ThenInclude(ba => ba.Authors)
+        .Include(b => b.BookEditors)
+        .ThenInclude(be => be.Editors);
+
+    switch (sortOrder.ToLower())
+    {
+        case "asc":
+            return orderedBooks.OrderBy(b => b.Title);
+        case "desc":
+            return orderedBooks.OrderByDescending(b => b.Title);
+        default:
+            return orderedBooks.OrderBy(b => b.Title);
+    }
+}
+
+// GET: api/Books/search
+[HttpGet("search")]
+public async Task<ActionResult<IEnumerable<object>>> SearchBooks(string searchTerm)
+{
+    searchTerm = searchTerm.ToLower(); // Преобразование запроса в нижний регистр
+
+    var matchingBooks = await GetOrderedBooks("asc")
+        .Where(book => book.Title.ToLower().Contains(searchTerm))
+        .ToListAsync();
+
+    return ProcessBooks(matchingBooks);
+}
+
+private ActionResult<IEnumerable<object>> ProcessBooks(List<Book> books)
+{
+    if (books.Count == 0)
+    {
+        return NotFound(); // Книги не найдены
+    }
+
+    var booksData = books.Select(book => new
+    {
+        id = book.BookId,
+        Bbk = book.BbkCodeNavigation.BbkCode,
+        Title = book.Title,
+        SeriesName = book.SeriesName,
+        Publisher = book.PublisherNavigation.Publishersname,
+        Image = GetImageData(book.Image),
+        PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
+        YearOfPublication = book.YearOfPublication,
+        Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
+        Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList()
+    }).ToList();
+
+    return Ok(booksData);
+}
    //вывод избранного
    [HttpGet("Favorite")]
    [Authorize]

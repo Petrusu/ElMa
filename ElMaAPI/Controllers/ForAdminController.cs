@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace ElMaAPI.Controllers;
 
@@ -21,6 +22,40 @@ public class ForAdminController : ControllerBase
         _context = context;
         _configuration = configuration;
         _environment = environment;
+    }
+    //вывод книг
+    [HttpGet("fillbook")]
+    public IActionResult GetAllBooks()
+    {
+        var allBooks = _context.Books
+            .Include(b => b.BbkCodeNavigation)
+            .Include(b => b.PlaceOfPublicationNavigation)
+            .Include(b => b.PublisherNavigation)
+            .Include(b => b.BookAuthors)
+            .ThenInclude(ba => ba.Authors)
+            .Include(b => b.BookEditors)
+            .ThenInclude(be => be.Editors)
+            .ToList();
+
+        if (allBooks.Count == 0)
+        {
+            return NotFound(); // Книги не найдены
+        }
+
+        var booksData = allBooks.Select(book => new
+        {
+            Bbk = book.BbkCodeNavigation.BbkCode,
+            Title = book.Title,
+            SeriesName = book.SeriesName,
+            Publisher = book.PublisherNavigation.Publishersname,
+            Image = GetImageData(book.Image),
+            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
+            YearOfPublication = book.YearOfPublication,
+            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
+            Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList()
+        }).ToList();
+
+        return Ok(booksData);
     }
 
     //добавление книги
@@ -308,6 +343,14 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
         {
             return BadRequest("Произошла ошибка:" + e);
         }
+    }
+    private byte[] GetImageData(string imageName)
+    {
+        //получаем полный путь к изоброажению
+        string imagePath = Path.Combine("Upload\\Files", imageName);
+
+        //читаем байты изображения
+        return System.IO.File.ReadAllBytes(imagePath);
     }
     private void UpdateBookAuthor(Book existingBook, string authorName)
 {
