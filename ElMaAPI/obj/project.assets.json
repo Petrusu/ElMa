@@ -7057,19 +7057,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Sofa\\.nuget\\packages\\": {}
+    "C:\\Users\\Petrusu\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Sofa\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\ElMaAPI.csproj",
+      "projectUniqueName": "C:\\Users\\Petrusu\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\ElMaAPI.csproj",
       "projectName": "ElMaAPI",
-      "projectPath": "C:\\Users\\Sofa\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\ElMaAPI.csproj",
-      "packagesPath": "C:\\Users\\Sofa\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Sofa\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\obj\\",
+      "projectPath": "C:\\Users\\Petrusu\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\ElMaAPI.csproj",
+      "packagesPath": "C:\\Users\\Petrusu\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Petrusu\\Desktop\\diplom\\ElMa.API\\ElMaAPI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Sofa\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Petrusu\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net7.0"
@@ -7185,11 +7185,51 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.404\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.405\\RuntimeIdentifierGraph.json"
       }
     }
   },
   "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.IdentityModel.JsonWebTokens' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
+      "libraryId": "Microsoft.IdentityModel.JsonWebTokens",
+      "targetGraphs": [
+        "net7.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.IdentityModel.JsonWebTokens' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8g9c-28fc-mcx2",
+      "libraryId": "Microsoft.IdentityModel.JsonWebTokens",
+      "targetGraphs": [
+        "net7.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.IdentityModel.Tokens.Jwt' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
+      "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        "net7.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.IdentityModel.Tokens.Jwt' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-8g9c-28fc-mcx2",
+      "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        "net7.0"
+      ]
+    },
     {
       "code": "NU1701",
       "level": "Warning",
