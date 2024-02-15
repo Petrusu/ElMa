@@ -11,6 +11,6 @@ public class BookRequest
     public string PlaceOfPublication { get; set; }
     public DateOnly YearOfPublication { get; set; }
     public string BBK { get; set; }
-    public List<string> Themes { get; set; }
+    public List<int> Themes { get; set; }
     public IFormFile? Image { get; set; }
 }

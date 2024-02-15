@@ -57,7 +57,42 @@ public class ForAdminController : ControllerBase
 
         return Ok(booksData);
     }
+    public class AddThemeRequestModel
+    {
+        public string Theme { get; set; }
+    }
 
+    [HttpPost("AddTheme")]
+    public async Task<IActionResult> AddTheme([FromBody] AddThemeRequestModel model)
+    {
+        try
+        {
+            if (model == null || string.IsNullOrWhiteSpace(model.Theme))
+            {
+                return BadRequest("Не указана тема");
+            }
+
+            // Найти или добавить темы
+            List<Theme> bookThemes = new List<Theme>();
+    
+            Theme existingTheme = _context.Themes.FirstOrDefault(t => t.Themesname == model.Theme);
+
+            if (existingTheme == null)
+            {
+                existingTheme = new Theme { Themesname =  model.Theme };
+                _context.Themes.Add(existingTheme);
+                _context.SaveChanges();
+            }
+    
+            bookThemes.Add(existingTheme);
+            _context.SaveChanges();
+            return Ok("Тема добавлена!");
+        }
+        catch (Exception e)
+        {
+            return BadRequest("Произошла ошибка:" + e);
+        }
+    }
     //добавление книги
     [HttpPost("AddNewBook")]
     public async Task<IActionResult> AddNewBook([FromForm] BookRequest bookRequest)
@@ -156,20 +191,6 @@ public class ForAdminController : ControllerBase
             }
             // Найти или добавить темы
             List<Theme> bookThemes = new List<Theme>();
-            foreach (string themeName in bookRequest.Themes)
-            {
-                Theme existingTheme = _context.Themes.FirstOrDefault(t => t.Themesname == themeName);
-
-                if (existingTheme == null)
-                {
-                    existingTheme = new Theme { Themesname = themeName };
-                    _context.Themes.Add(existingTheme);
-                    _context.SaveChanges();
-                }
-        
-                bookThemes.Add(existingTheme);
-                _context.SaveChanges();
-            }
             //Добавить связь тема и книги
             foreach (var theme in bookThemes)
             {
@@ -380,99 +401,99 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
     _context.BookAuthors.Add(bookAuthor);
 }
 
-private void UpdateBookEditor(Book existingBook, string editorName)
-{
-    Editor editorObj = _context.Editors.FirstOrDefault(e => e.Editorname == editorName);
-
-    if (editorObj == null)
+    private void UpdateBookEditor(Book existingBook, string editorName)
     {
-        editorObj = new Editor { Editorname = editorName };
-        _context.Editors.Add(editorObj);
-        _context.SaveChanges();
-    }
+        Editor editorObj = _context.Editors.FirstOrDefault(e => e.Editorname == editorName);
 
-    // Удалить существующую связь
-    var bookEditor = _context.BookEditors.FirstOrDefault(be => be.BookId == existingBook.BookId);
-    if (bookEditor != null)
-    {
-        _context.BookEditors.Remove(bookEditor);
-        _context.SaveChanges();
-    }
-
-    // Создать новую связь
-    bookEditor = new BookEditor
-    {
-        BookId = existingBook.BookId,
-        EditorsId = editorObj.EditorsId
-    };
-    _context.BookEditors.Add(bookEditor);
-}
-
-private void UpdateBookThemes(Book existingBook, List<string> themeNames)
-{
-    List<Theme> bookThemes = new List<Theme>();
-    foreach (string themeName in themeNames)
-    {
-        Theme existingTheme = _context.Themes.FirstOrDefault(t => t.Themesname == themeName);
-
-        if (existingTheme == null)
+        if (editorObj == null)
         {
-            existingTheme = new Theme { Themesname = themeName };
-            _context.Themes.Add(existingTheme);
+            editorObj = new Editor { Editorname = editorName };
+            _context.Editors.Add(editorObj);
             _context.SaveChanges();
         }
 
-        bookThemes.Add(existingTheme);
-    }
+        // Удалить существующую связь
+        var bookEditor = _context.BookEditors.FirstOrDefault(be => be.BookId == existingBook.BookId);
+        if (bookEditor != null)
+        {
+            _context.BookEditors.Remove(bookEditor);
+            _context.SaveChanges();
+        }
 
-    // Удалить существующие связи
-    var existingBookThemes = _context.BookThemes
-        .Where(bt => bt.BookId == existingBook.BookId)
-        .ToList();
-
-    foreach (var oldBookTheme in existingBookThemes)
-    {
-        _context.BookThemes.Remove(oldBookTheme);
-    }
-
-    // Добавить новые связи
-    foreach (var newTheme in bookThemes)
-    {
-        BookTheme bookTheme = new BookTheme
+        // Создать новую связь
+        bookEditor = new BookEditor
         {
             BookId = existingBook.BookId,
-            ThemesId = newTheme.ThemesId
+            EditorsId = editorObj.EditorsId
         };
-        _context.BookThemes.Add(bookTheme);
+        _context.BookEditors.Add(bookEditor);
     }
-}
-    //метод для сохранения изображения, возвращает имя изображения
-    private async Task<string> WriteFile(IFormFile file)
+
+    private void UpdateBookThemes(Book existingBook, List<int> themeId)
     {
-        string filename = "";
-        try
+        List<Theme> bookThemes = new List<Theme>();
+        foreach (int themeID in themeId)
         {
-            var extension = "." + file.FileName.Split('.')[file.FileName.Split('.').Length - 1];
-            filename = DateTime.Now.Ticks.ToString() + extension;
+            Theme existingTheme = _context.Themes.FirstOrDefault(t => t.ThemesId == themeID);
 
-            var filepath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files");
-
-            if (!Directory.Exists(filepath))
+            if (existingTheme == null)
             {
-                Directory.CreateDirectory(filepath);
+                existingTheme = new Theme { ThemesId = themeID };
+                _context.Themes.Add(existingTheme);
+                _context.SaveChanges();
             }
 
-            var exactpath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files", filename);
-            using (var stream = new FileStream(exactpath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-        }
-        catch (Exception e)
-        {
+            bookThemes.Add(existingTheme);
         }
 
-        return filename;
+        // Удалить существующие связи
+        var existingBookThemes = _context.BookThemes
+            .Where(bt => bt.BookId == existingBook.BookId)
+            .ToList();
+
+        foreach (var oldBookTheme in existingBookThemes)
+        {
+            _context.BookThemes.Remove(oldBookTheme);
+        }
+
+        // Добавить новые связи
+        foreach (var newTheme in bookThemes)
+        {
+            BookTheme bookTheme = new BookTheme
+            {
+                BookId = existingBook.BookId,
+                ThemesId = newTheme.ThemesId
+            };
+            _context.BookThemes.Add(bookTheme);
+        }
     }
-   
-}
+        //метод для сохранения изображения, возвращает имя изображения
+        private async Task<string> WriteFile(IFormFile file)
+        {
+            string filename = "";
+            try
+            {
+                var extension = "." + file.FileName.Split('.')[file.FileName.Split('.').Length - 1];
+                filename = DateTime.Now.Ticks.ToString() + extension;
+
+                var filepath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files");
+
+                if (!Directory.Exists(filepath))
+                {
+                    Directory.CreateDirectory(filepath);
+                }
+
+                var exactpath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files", filename);
+                using (var stream = new FileStream(exactpath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+            catch (Exception e)
+            {
+            }
+
+            return filename;
+        }
+       
+    }
