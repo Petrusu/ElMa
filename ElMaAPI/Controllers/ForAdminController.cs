@@ -95,7 +95,7 @@ public class ForAdminController : ControllerBase
     }
     //добавление книги
     [HttpPost("AddNewBook")]
-    public async Task<IActionResult> AddNewBook([FromForm] BookRequest bookRequest)
+    public async Task<IActionResult> AddNewBook([FromBody] BookRequest bookRequest)
     {
         try
         {
@@ -368,7 +368,9 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
     private byte[] GetImageData(string imageName)
     {
         //получаем полный путь к изоброажению
-        string imagePath = Path.Combine("Upload\\Files", imageName);
+        string imagePath = Path.Combine("Upload\\Files", imageName == "" ? "picture.png" : imageName);
+        
+        
 
         //читаем байты изображения
         return System.IO.File.ReadAllBytes(imagePath);

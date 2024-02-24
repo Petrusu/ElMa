@@ -158,10 +158,7 @@ public class ForAllUsersController : ControllerBase
            return NotFound(); //темы не найдены
        }
 
-       var themesData = allthemes.Select(theme => new
-       {
-            theme.Themesname
-       });
+       var themesData = allthemes.ToList();
        return Ok(themesData);
    }
    //вывод авторов
@@ -255,7 +252,7 @@ public class ForAllUsersController : ControllerBase
    private byte[] GetImageData(string imageName)
    {
        //получаем полный путь к изоброажению
-       string imagePath = Path.Combine("Upload\\Files", imageName);
+       string imagePath = Path.Combine("Upload\\Files", imageName == "" ? "picture.png" : imageName);
 
        //читаем байты изображения
        return System.IO.File.ReadAllBytes(imagePath);
