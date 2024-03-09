@@ -46,7 +46,7 @@ public partial class JvwaskwsContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Server=balarama.db.elephantsql.com;Database=jvwaskws;Username=jvwaskws;Password=mVMe_Cq431qfgIV8x_QhdKOaG-0hDKKm");
+        => optionsBuilder.UseLazyLoadingProxies().UseNpgsql("Server=balarama.db.elephantsql.com;Database=jvwaskws;Username=jvwaskws;Password=mVMe_Cq431qfgIV8x_QhdKOaG-0hDKKm");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

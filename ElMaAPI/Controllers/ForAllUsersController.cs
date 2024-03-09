@@ -7,7 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using System.Net.Mail;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ElMaDesktop.Classes;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace ElMaAPI.Controllers;
 [ApiController]
@@ -132,21 +137,21 @@ public class ForAllUsersController : ControllerBase
            return NotFound(); // Книги не найдены
        }
        
-       var booksData = allBooks.Select(book => new
+       var booksData = allBooks.Select(book => new BooksCard()
        {
-           id = book.BookId,
-           Bbk = book.BbkCodeNavigation.BbkCode,
+           BookId = book.BookId,
+           BBK = book.BbkCodeNavigation.BbkCode,
            Title = book.Title,
            SeriesName = book.SeriesName,
            Publisher = book.PublisherNavigation.Publishersname,
            Image = GetImageData(book.Image),
            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
-           YearOfPublication = book.YearOfPublication,
+           YearOfPublication = book.YearOfPublication.ToString(),
            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
            Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList()
        }).ToList();
 
-       return Ok(booksData);
+       return Ok(JsonSerializer.Serialize(booksData));
    }
    //вывод тем
    [HttpGet("fillthemes")]
@@ -159,7 +164,7 @@ public class ForAllUsersController : ControllerBase
        }
 
        var themesData = allthemes.ToList();
-       return Ok(themesData);
+       return Ok(JsonSerializer.Serialize(themesData, new JsonSerializerOptions(){ReferenceHandler = ReferenceHandler.IgnoreCycles}));
    }
    //вывод авторов
    [HttpGet("fillauthors")]
@@ -193,6 +198,48 @@ public class ForAllUsersController : ControllerBase
        });
        return Ok(editorData);
    }
+   // запрос на информацию о конкретной книге
+   [HttpGet("getinformationaboutbook")]
+   public async Task<ActionResult<BookRequest>> GetInformationAboutBook(int bookId)
+   {
+       // запрос к бд для нахождения книги соответствующей введенному id
+       var currentBook = await _context.Books
+           .Include(b => b.BbkCodeNavigation)
+           .Include(b => b.PlaceOfPublicationNavigation)
+           .Include(b => b.PublisherNavigation)
+           .Include(b => b.BookAuthors)
+           .ThenInclude(ba => ba.Authors)
+           .Include(b => b.BookEditors)
+           .ThenInclude(be => be.Editors)
+           .Include(b => b.BookThemes)
+           .ThenInclude(bt => bt.Themes)
+           .FirstOrDefaultAsync(b => b.BookId == bookId); // исправлено здесь, добавлен FirstOrDefaultAsync
+
+       if (currentBook == null)
+       {
+           return NotFound("Книга не найдена");
+       }
+       
+       var bookInformation = new BookRequest()
+       {
+           Id = currentBook.BookId,
+           Title = currentBook.Title,
+           SeriesName = currentBook.SeriesName,
+           AuthorBook = _context.BookAuthors.ToList().Count != 0 ? _context.BookAuthors.Where(a => a.BookId == bookId).First().Authors.Authorsname : "",
+           Editor = _context.BookEditors.ToList().Count != 0 ? _context.BookEditors.Where(e => e.BookId == bookId).First().Editors.Editorname : "",
+           Annotation = currentBook.Annotation,
+           Publisher = currentBook.PublisherNavigation.Publishersname,
+           PlaceOfPublication = currentBook.PlaceOfPublicationNavigation.Publicationplasesname,
+           YearOfPublication = currentBook.YearOfPublication,
+           BBK = currentBook.BbkCodeNavigation.BbkCode,
+           Themes = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.ThemesId).ToList(), ///
+           Image = System.IO.File.ReadAllBytes($"Upload/Files/{currentBook.Image}"),
+           ImageName = currentBook.Image
+       };
+
+       return Ok(JsonSerializer.Serialize(bookInformation)); // возвращаем информацию о книге
+   }
+
 
    //вывод избранного
    [HttpGet("Favorite")]

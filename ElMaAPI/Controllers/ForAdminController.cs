@@ -23,40 +23,6 @@ public class ForAdminController : ControllerBase
         _configuration = configuration;
         _environment = environment;
     }
-    //вывод книг
-    [HttpGet("fillbook")]
-    public IActionResult GetAllBooks()
-    {
-        var allBooks = _context.Books
-            .Include(b => b.BbkCodeNavigation)
-            .Include(b => b.PlaceOfPublicationNavigation)
-            .Include(b => b.PublisherNavigation)
-            .Include(b => b.BookAuthors)
-            .ThenInclude(ba => ba.Authors)
-            .Include(b => b.BookEditors)
-            .ThenInclude(be => be.Editors)
-            .ToList();
-
-        if (allBooks.Count == 0)
-        {
-            return NotFound(); // Книги не найдены
-        }
-
-        var booksData = allBooks.Select(book => new
-        {
-            Bbk = book.BbkCodeNavigation.BbkCode,
-            Title = book.Title,
-            SeriesName = book.SeriesName,
-            Publisher = book.PublisherNavigation.Publishersname,
-            Image = GetImageData(book.Image),
-            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
-            YearOfPublication = book.YearOfPublication,
-            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
-            Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList()
-        }).ToList();
-
-        return Ok(booksData);
-    }
     public class AddThemeRequestModel
     {
         public string Theme { get; set; }
@@ -106,7 +72,7 @@ public class ForAdminController : ControllerBase
                 SeriesName = bookRequest.SeriesName,
                 Annotation = bookRequest.Annotation,
                 YearOfPublication = bookRequest.YearOfPublication,
-                Image = await WriteFile(bookRequest.Image)
+                Image = await WriteFile(bookRequest.Image, bookRequest.ImageName)
             };
 
             // Найти или добавить место публикации
@@ -212,14 +178,14 @@ public class ForAdminController : ControllerBase
     }
     
     [HttpPost("EditBook")]
-public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [FromQuery] int bookId)
+public async Task<IActionResult> EditBook(BookRequest bookRequest)
 {
     using (var transaction = _context.Database.BeginTransaction())
     {
         try
         {
             // Найти книгу по идентификатору
-            Book existingBook = _context.Books.Find(bookId);
+            Book existingBook = _context.Books.Find(bookRequest.Id);
 
             if (existingBook == null)
             {
@@ -250,7 +216,7 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
             // Обновить изображение, если оно указано
             if (bookRequest.Image != null)
             {
-                existingBook.Image = await WriteFile(bookRequest.Image);
+                existingBook.Image = await WriteFile(bookRequest.Image, bookRequest.ImageName);
             }
 
             // Обновить место публикации, если оно указано
@@ -324,7 +290,7 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
         try
         {
             // Найти книгу по идентификатору
-            Book existingBook = _context.Books.Find(bookId);
+            Book existingBook = _context.Books.Where(b => b.BookId == bookId).FirstOrDefault();
 
             if (existingBook == null)
             {
@@ -433,6 +399,9 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
 
     private void UpdateBookThemes(Book existingBook, List<int> themeId)
     {
+        var oldThemes = _context.BookThemes.Where(t => t.BookId == existingBook.BookId).ToList();
+        _context.RemoveRange(oldThemes);
+        _context.SaveChanges();
         List<Theme> bookThemes = new List<Theme>();
         foreach (int themeID in themeId)
         {
@@ -470,14 +439,10 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
         }
     }
         //метод для сохранения изображения, возвращает имя изображения
-        private async Task<string> WriteFile(IFormFile file)
+        private async Task<string> WriteFile(byte[] file, string fileName)
         {
-            string filename = "";
             try
             {
-                var extension = "." + file.FileName.Split('.')[file.FileName.Split('.').Length - 1];
-                filename = DateTime.Now.Ticks.ToString() + extension;
-
                 var filepath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files");
 
                 if (!Directory.Exists(filepath))
@@ -485,17 +450,21 @@ public async Task<IActionResult> EditBook([FromForm] BookRequest bookRequest, [F
                     Directory.CreateDirectory(filepath);
                 }
 
-                var exactpath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files", filename);
-                using (var stream = new FileStream(exactpath, FileMode.Create))
+                var exactpath = Path.Combine(Directory.GetCurrentDirectory(), "Upload\\Files", fileName);
+                if (!System.IO.File.Exists(exactpath))
                 {
-                    await file.CopyToAsync(stream);
+                    System.IO.File.WriteAllBytes(exactpath, file);
+                }
+                else
+                {
+                        
                 }
             }
             catch (Exception e)
             {
             }
 
-            return filename;
+            return fileName;
         }
        
     }
