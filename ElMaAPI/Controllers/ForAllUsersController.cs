@@ -243,7 +243,6 @@ public class ForAllUsersController : ControllerBase
 
    //вывод избранного
    [HttpGet("Favorite")]
-   [Authorize]
    public OkObjectResult GetFavoriteBooksByUserId()
    {
        int userId = GetUserIdFromToken();
@@ -299,7 +298,7 @@ public class ForAllUsersController : ControllerBase
    private byte[] GetImageData(string imageName)
    {
        //получаем полный путь к изоброажению
-       string imagePath = Path.Combine("Upload\\Files", imageName == "" ? "picture.png" : imageName);
+       string imagePath = Path.Combine("Upload//Files", imageName == "" ? "picture.png" : imageName);
 
        //читаем байты изображения
        return System.IO.File.ReadAllBytes(imagePath);
