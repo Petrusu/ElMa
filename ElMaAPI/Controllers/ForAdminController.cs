@@ -318,6 +318,15 @@ public async Task<IActionResult> EditBook(BookRequest bookRequest)
                 _context.BookThemes.Remove(bookTheme);
             }
 
+            try
+            {
+                System.IO.File.Delete($"Upload/Files/{existingBook.Image}");
+            }
+            catch (Exception e)
+            {
+                BadRequest("Не удалось удалить книгу.");
+            }
+            
             // Удалить книгу
             _context.Books.Remove(existingBook);
 
