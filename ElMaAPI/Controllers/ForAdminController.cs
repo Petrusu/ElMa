@@ -155,15 +155,13 @@ public class ForAdminController : ControllerBase
                 _context.BookEditors.Add(bookEditor);
                 _context.SaveChanges();
             }
-            // Найти или добавить темы
-            List<Theme> bookThemes = new List<Theme>();
             //Добавить связь тема и книги
-            foreach (var theme in bookThemes)
+            foreach (var theme in bookRequest.Themes)
             {
                 BookTheme bookTheme = new BookTheme
                 {
                     BookId = newBook.BookId,
-                    ThemesId = theme.ThemesId
+                    ThemesId = theme
                 };
                 _context.BookThemes.Add(bookTheme);
                 _context.SaveChanges();
