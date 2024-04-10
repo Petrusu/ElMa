@@ -8,9 +8,6 @@
 
     <ItemGroup>
         <PackageReference Include="BCrypt.Net" Version="0.1.0" />
-        <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
-        <PackageReference Include="FirebaseStorage.net" Version="1.0.3" />
-        <PackageReference Include="Google.Cloud.Storage.V1" Version="4.7.0" />
         <PackageReference Include="HiNetCloud.Microsoft.IdentityModel.JsonWebTokens" Version="23.10.8.15" />
         <PackageReference Include="HiNetCloud.System.IdentityModel.Tokens.Jwt" Version="23.10.10.15" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.14" />

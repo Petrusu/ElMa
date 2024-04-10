@@ -10,8 +10,6 @@ using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ElMaDesktop.Classes;
-using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace ElMaAPI.Controllers;

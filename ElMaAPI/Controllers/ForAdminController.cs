@@ -1,11 +1,6 @@
 ﻿using ElMaAPI.Context;
 using ElMaAPI.Models;
 using Microsoft.AspNetCore.Mvc;
-using Google.Cloud.Storage.V1;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-
 namespace ElMaAPI.Controllers;
 
 [ApiController]

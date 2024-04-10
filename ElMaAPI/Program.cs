@@ -1,9 +1,6 @@
 using System.Runtime.Intrinsics.X86;
 using ElMaAPI.Context;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<JvwaskwsContext>();
