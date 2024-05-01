@@ -7,7 +7,7 @@ public partial class Editor
 {
     public int EditorsId { get; set; }
 
-    public string Editorname { get; set; } = null!;
+    public string? Editorname { get; set; }
 
     public virtual ICollection<BookEditor> BookEditors { get; set; } = new List<BookEditor>();
 }

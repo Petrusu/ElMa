@@ -64,8 +64,8 @@ public class ForAdminController : ControllerBase
             Book newBook = new Book
             {
                 Title = bookRequest.Title,
-                SeriesName = bookRequest.SeriesName,
-                Annotation = bookRequest.Annotation,
+                SeriesName = bookRequest.SeriesName == null ? "" : bookRequest.SeriesName,
+                Annotation = bookRequest.Annotation == null ? "" : bookRequest.Annotation,
                 YearOfPublication = bookRequest.YearOfPublication,
                 Image = await WriteFile(bookRequest.Image, bookRequest.ImageName)
             };
@@ -97,8 +97,8 @@ public class ForAdminController : ControllerBase
                 .FirstOrDefault(b => b.BbkCode == bookRequest.BBK);
             if (bbk == null)
             {
-                bbk = new Bbk { BbkCode = bookRequest.BBK };
-                _context.Bbks.Add(bbk);
+                bbk = new Bbk { BbkCode = bookRequest.BBK};
+                _context.Add(bbk);
                 _context.SaveChanges();
             }
             newBook.BbkCode = bbk.BbkId;
@@ -113,42 +113,47 @@ public class ForAdminController : ControllerBase
             if (bookRequest.AuthorBook != null)
             {
                 //Найти или добавить автора
-                Author author = _context.Authors.FirstOrDefault(a => a.Authorsname == bookRequest.AuthorBook);
-                if (author == null)
+                foreach (var authorBook in bookRequest.AuthorBook)
                 {
-                    author = new Author { Authorsname = bookRequest.AuthorBook };
-                    _context.Authors.Add(author);
+                    Author author = _context.Authors.FirstOrDefault(a => a.Authorsname == authorBook);
+                    if (author == null)
+                    {
+                        author = new Author { Authorsname = authorBook };
+                        _context.Authors.Add(author);
+                        _context.SaveChanges();
+                    }
+                    //Добавить связь между автором и книгой
+                    BookAuthor bookAuthor = new BookAuthor
+                    {
+                        BookId = newBook.BookId,
+                        AuthorsId = author.AuthorsId
+                    };
+                    _context.BookAuthors.Add(bookAuthor);
                     _context.SaveChanges();
                 }
-
-                //Добавить связь между автором и книгой
-                BookAuthor bookAuthor = new BookAuthor
-                {
-                    BookId = newBook.BookId,
-                    AuthorsId = author.AuthorsId
-                };
-                _context.BookAuthors.Add(bookAuthor);
-                _context.SaveChanges();
             }
-            else if (bookRequest.Editor != null)
+            if (bookRequest.Editor != null)
             {
                 //Найти или добавить редактора
-                Editor editorObj = _context.Editors.FirstOrDefault(e => e.Editorname == bookRequest.Editor);
-                if (editorObj == null)
+                foreach (var editorBook in bookRequest.Editor)
                 {
-                    editorObj = new Editor { Editorname = bookRequest.Editor };
-                    _context.Editors.Add(editorObj);
+                    Editor editorObj = _context.Editors.FirstOrDefault(e => e.Editorname == editorBook);
+                    if (editorObj == null)
+                    {
+                        editorObj = new Editor { Editorname = editorBook };
+                        _context.Editors.Add(editorObj);
+                        _context.SaveChanges();
+                    }
+            
+                    //Добавить связь между редактором и книгой
+                    BookEditor bookEditor = new BookEditor
+                    {
+                        BookId = newBook.BookId,
+                        EditorsId = editorObj.EditorsId
+                    };
+                    _context.BookEditors.Add(bookEditor);
                     _context.SaveChanges();
                 }
-            
-                //Добавить связь между редактором и книгой
-                BookEditor bookEditor = new BookEditor
-                {
-                    BookId = newBook.BookId,
-                    EditorsId = editorObj.EditorsId
-                };
-                _context.BookEditors.Add(bookEditor);
-                _context.SaveChanges();
             }
             //Добавить связь тема и книги
             foreach (var theme in bookRequest.Themes)
@@ -186,17 +191,17 @@ public async Task<IActionResult> EditBook(BookRequest bookRequest)
             }
 
             // Обновить только те параметры, которые предоставлены пользователем
-            if (!string.IsNullOrEmpty(bookRequest.Title))
+            if (bookRequest.Title != null)
             {
                 existingBook.Title = bookRequest.Title;
             }
 
-            if (!string.IsNullOrEmpty(bookRequest.SeriesName))
+            if (bookRequest.SeriesName != null)
             {
                 existingBook.SeriesName = bookRequest.SeriesName;
             }
 
-            if (!string.IsNullOrEmpty(bookRequest.Annotation))
+            if (bookRequest.Annotation != null)
             {
                 existingBook.Annotation = bookRequest.Annotation;
             }
@@ -245,19 +250,52 @@ public async Task<IActionResult> EditBook(BookRequest bookRequest)
             }
 
             // Обновить автора или редактора, если указаны
-            if (!string.IsNullOrEmpty(bookRequest.AuthorBook))
+            foreach (var authorBook in bookRequest.AuthorBook)
             {
-                UpdateBookAuthor(existingBook, bookRequest.AuthorBook);
-            }
-            else if (!string.IsNullOrEmpty(bookRequest.Editor))
-            {
-                UpdateBookEditor(existingBook, bookRequest.Editor);
+                if (authorBook != null)
+                {
+                    UpdateBookAuthor(existingBook, authorBook);
+                }
+                else
+                {
+                    // Удалить связи с авторами
+                    var bookAuthors = _context.BookAuthors.Where(ba => ba.BookId == existingBook.BookId).ToList();
+                    foreach (var bookAuthor in bookAuthors)
+                    {
+                        _context.BookAuthors.Remove(bookAuthor);
+                    }
+                } 
+                if (bookRequest.Editor != null)
+                {
+                   foreach (var editorBook in bookRequest.Editor)
+                   {
+                       UpdateBookEditor(existingBook, editorBook);
+                   }
+                }
+                else
+                {
+                    // Удалить связи с редакторами
+                    var bookEditors = _context.BookEditors.Where(be => be.BookId == existingBook.BookId).ToList();
+                    foreach (var bookEditor in bookEditors)
+                    {
+                        _context.BookEditors.Remove(bookEditor);
+                    }
+                }
             }
 
             // Обновить темы, если указаны
             if (bookRequest.Themes != null && bookRequest.Themes.Any())
             {
                 UpdateBookThemes(existingBook, bookRequest.Themes);
+            }
+            else
+            {
+                // Удалить связи с темами
+                var bookThemes = _context.BookThemes.Where(bt => bt.BookId == existingBook.BookId).ToList();
+                foreach (var bookTheme in bookThemes)
+                {
+                    _context.BookThemes.Remove(bookTheme);
+                }
             }
 
             // Сохранить изменения в базе данных

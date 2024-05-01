@@ -17,7 +17,7 @@ public partial class Book
 
     public int PlaceOfPublication { get; set; }
 
-    public DateOnly YearOfPublication { get; set; }
+    public int YearOfPublication { get; set; }
 
     public int? BbkCode { get; set; }
 

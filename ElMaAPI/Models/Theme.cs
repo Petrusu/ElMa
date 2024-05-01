@@ -7,7 +7,7 @@ public partial class Theme
 {
     public int ThemesId { get; set; }
 
-    public string Themesname { get; set; } = null!;
+    public string? Themesname { get; set; }
 
     public virtual ICollection<BookTheme> BookThemes { get; set; } = new List<BookTheme>();
 }

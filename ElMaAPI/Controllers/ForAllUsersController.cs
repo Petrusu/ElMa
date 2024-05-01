@@ -217,23 +217,41 @@ public class ForAllUsersController : ControllerBase
        {
            return NotFound("Книга не найдена");
        }
-       
+
        var bookInformation = new BookRequest()
        {
            Id = currentBook.BookId,
            Title = currentBook.Title,
            SeriesName = currentBook.SeriesName,
-           AuthorBook = _context.BookAuthors.ToList().Count != 0 ? _context.BookAuthors.Where(a => a.BookId == bookId).FirstOrDefault()?.Authors.Authorsname : "",
-           Editor = _context.BookEditors.ToList().Count != 0 ? _context.BookEditors.Where(e => e.BookId == bookId).FirstOrDefault()?.Editors.Editorname : "",
            Annotation = currentBook.Annotation,
            Publisher = currentBook.PublisherNavigation.Publishersname,
            PlaceOfPublication = currentBook.PlaceOfPublicationNavigation.Publicationplasesname,
            YearOfPublication = currentBook.YearOfPublication,
            BBK = currentBook.BbkCodeNavigation.BbkCode,
-           Themes = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.ThemesId).ToList(), 
-           Image = System.IO.File.ReadAllBytes($"Upload/Files/{currentBook.Image}"),
-           ImageName = currentBook.Image
+           Themes = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.ThemesId).ToList(),
        };
+       string fileInfo = currentBook.Image == "" || currentBook.Image == null ? "picture.png" : currentBook.Image;
+       bookInformation.Image = System.IO.File.ReadAllBytes(
+           $"Upload/Files/{fileInfo}");
+       bookInformation.ImageName = currentBook.Image;
+
+       var authorsList = _context.BookAuthors.Where(a => a.BookId == bookId).ToList();
+       string[] authorsArr = new string[authorsList.Count()];
+       for (int i = 0; i < authorsArr.Length; i++)
+       {
+           authorsArr[i] = authorsList[i].Authors.Authorsname;
+       }
+
+       bookInformation.AuthorBook = authorsArr;
+
+       var editorsList = _context.BookEditors.Where(a => a.BookId == bookId).ToList();
+       string[] editorsArr = new string[editorsList.Count()];
+       for (int i = 0; i < editorsArr.Length; i++)
+       {
+           editorsArr[i] = editorsList[i].Editors.Editorname;
+       }
+
+       bookInformation.Editor = editorsArr;
 
        return Ok(JsonSerializer.Serialize(bookInformation)); // возвращаем информацию о книге
    }
