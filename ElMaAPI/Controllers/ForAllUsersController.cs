@@ -32,18 +32,12 @@ public class ForAllUsersController : ControllerBase
     [HttpPost("registration")]
     public async Task<IActionResult> RegisterUser(string login, string email, string password)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
 
         // Проверяем, существует ли пользователь с таким же именем пользователя или email'ом
         if (await _context.Users.AnyAsync(u => u.Username == login || u.Email == email))
         {
             return Conflict("Пользователь с такими данными уже существует");
         }
-        
-        SendMessage(login, email);
         
         // Шифрование пароля
         string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
@@ -55,10 +49,12 @@ public class ForAllUsersController : ControllerBase
             Userpassword = hashedPassword,
             Userrole = 2  
         };
-
+        
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
+        SendMessage(login, email);
         return Ok("Пользователь добавлен");
+        
     }
     
     //авторизация
@@ -336,10 +332,20 @@ public class ForAllUsersController : ControllerBase
        user.Userpassword = hashedPassword;
        _context.SaveChanges(); //сохранение нового пароля
 
-       // Отправка сообщения с кодом на почту
-       SendMessage(user.Username, user.Email);
-
        return Ok("Пароль изменен");
+   }
+
+   [HttpGet("getLogin")]
+   public string GetLogin()
+   {
+       int id = GetUserIdFromToken();
+       var user = _context.Users.FirstOrDefault(u => u.UserId == id);
+       if (user == null)
+       {
+           return null; // Пользователь не найден
+       }
+
+       return (user.Username);
    }
 
     //изменения email
