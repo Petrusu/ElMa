@@ -13,6 +13,7 @@ public class BookRequest
     public int YearOfPublication { get; set; }
     public string BBK { get; set; }
     public List<int> Themes { get; set; }
+    public List<string> ThemesName { get; set; }
     public byte[] Image { get; set; }
     public string ImageName { get; set; }
 }

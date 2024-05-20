@@ -142,10 +142,69 @@ public class ForAllUsersController : ControllerBase
            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
            YearOfPublication = book.YearOfPublication.ToString(),
            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
-           Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList()
+           Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
+           ThemesName = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.Themes.Themesname).ToList()
        }).ToList();
 
        return Ok(JsonSerializer.Serialize(booksData));
+   }
+   [HttpGet("fillbookonpage")]
+   public IActionResult GetAllBooksOnPage(int page = 1, int size = 20)
+   {
+       if (page <= 0 || size <= 0)
+       {
+           return BadRequest("Page and size parameters must be greater than 0");
+       }
+
+       var query = _context.Books
+           .Include(b => b.BbkCodeNavigation)
+           .Include(b => b.PlaceOfPublicationNavigation)
+           .Include(b => b.PublisherNavigation)
+           .Include(b => b.BookAuthors)
+           .ThenInclude(ba => ba.Authors)
+           .Include(b => b.BookEditors)
+           .ThenInclude(be => be.Editors)
+           .Include(b => b.BookThemes)
+           .ThenInclude(bt => bt.Themes)
+           .AsQueryable();
+
+       var totalBooks = query.Count();
+       var totalPages = (int)Math.Ceiling(totalBooks / (double)size);
+
+       var allBooks = query
+           .Skip((page - 1) * size)
+           .Take(size)
+           .ToList();
+
+       if (allBooks.Count == 0)
+       {
+           return NotFound(); // Книги не найдены
+       }
+
+       var booksData = allBooks.Select(book => new BooksCard()
+       {
+           BookId = book.BookId,
+           BBK = book.BbkCodeNavigation.BbkCode,
+           Title = book.Title,
+           SeriesName = book.SeriesName,
+           Publisher = book.PublisherNavigation.Publishersname,
+           Image = GetImageData(book.Image),
+           PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
+           YearOfPublication = book.YearOfPublication.ToString(),
+           Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
+           Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
+           ThemesName = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.Themes.Themesname).ToList()
+       }).ToList();
+
+       var response = new
+       {
+           TotalBooks = totalBooks,
+           TotalPages = totalPages,
+           CurrentPage = page,
+           Books = booksData
+       };
+
+       return Ok(JsonSerializer.Serialize(response));
    }
    //вывод тем
    [HttpGet("fillthemes")]
@@ -224,7 +283,8 @@ public class ForAllUsersController : ControllerBase
            PlaceOfPublication = currentBook.PlaceOfPublicationNavigation.Publicationplasesname,
            YearOfPublication = currentBook.YearOfPublication,
            BBK = currentBook.BbkCodeNavigation.BbkCode,
-           Themes = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.ThemesId).ToList(),
+           ThemesName = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.Themes.Themesname).ToList(),
+           Themes = _context.BookThemes.Where(b => b.BookId == bookId).Select(b => b.ThemesId).ToList()
        };
        string fileInfo = currentBook.Image == "" || currentBook.Image == null ? "picture.png" : currentBook.Image;
        bookInformation.Image = System.IO.File.ReadAllBytes(
@@ -336,16 +396,16 @@ public class ForAllUsersController : ControllerBase
    }
 
    [HttpGet("getLogin")]
-   public string GetLogin()
+   public IActionResult GetLogin()
    {
        int id = GetUserIdFromToken();
        var user = _context.Users.FirstOrDefault(u => u.UserId == id);
        if (user == null)
        {
-           return null; // Пользователь не найден
+           return NotFound("Не удалось вывести имя пользователя"); // Пользователь не найден
        }
 
-       return (user.Username);
+       return Ok(JsonSerializer.Serialize(user.Username));
    }
 
     //изменения email
