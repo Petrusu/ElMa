@@ -10,6 +10,7 @@ using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ElMaDesktop.Classes;
+using Microsoft.AspNetCore.Http.HttpResults;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace ElMaAPI.Controllers;
@@ -110,44 +111,72 @@ public class ForAllUsersController : ControllerBase
         }
     }
     
-   //вывод книг 
-   [HttpGet("fillbook")]
-   public IActionResult GetAllBooks()
-   {
-       var allBooks = _context.Books
-           .Include(b => b.BbkCodeNavigation)
-           .Include(b => b.PlaceOfPublicationNavigation)
-           .Include(b => b.PublisherNavigation)
-           .Include(b => b.BookAuthors)
-           .ThenInclude(ba => ba.Authors)
-           .Include(b => b.BookEditors)
-           .ThenInclude(be => be.Editors)
-           .Include(b => b.BookThemes)
-           .ThenInclude(bt => bt.Themes)
-           .ToList();
+   [HttpGet("fillbookOnPageDesktop")]
+public async Task<IActionResult> GetAllBooksAsync(int page = 1, int size = 20)
+{
+    try
+    {
+        if (page <= 0 || size <= 0)
+        {
+            return BadRequest("Page and size parameters must be greater than 0");
+        }
 
-       if (allBooks.Count == 0)
-       {
-           return NotFound(); // Книги не найдены
-       }
-       
-       var booksData = allBooks.Select(book => new BooksCard()
-       {
-           BookId = book.BookId,
-           BBK = book.BbkCodeNavigation.BbkCode,
-           Title = book.Title,
-           SeriesName = book.SeriesName,
-           Publisher = book.PublisherNavigation.Publishersname,
-           Image = GetImageData(book.Image),
-           PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
-           YearOfPublication = book.YearOfPublication.ToString(),
-           Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
-           Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
-           ThemesName = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.Themes.Themesname).ToList()
-       }).ToList();
+        var query = _context.Books
+            .Include(b => b.BbkCodeNavigation)
+            .Include(b => b.PlaceOfPublicationNavigation)
+            .Include(b => b.PublisherNavigation)
+            .Include(b => b.BookAuthors)
+            .ThenInclude(ba => ba.Authors)
+            .Include(b => b.BookEditors)
+            .ThenInclude(be => be.Editors)
+            .Include(b => b.BookThemes)
+            .ThenInclude(bt => bt.Themes)
+            .AsQueryable();
 
-       return Ok(JsonSerializer.Serialize(booksData));
-   }
+        var totalBooks = query.Count();
+        var totalPages = (int)Math.Ceiling(totalBooks / (double)size);
+
+        var allBooks = query
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToList();
+
+        if (allBooks.Count == 0)
+        {
+            return NotFound(); // Книги не найдены
+        }
+
+        var booksData = allBooks.Select(book => new BooksCard()
+        {
+            BookId = book.BookId,
+            BBK = book.BbkCodeNavigation?.BbkCode,
+            Title = book.Title,
+            SeriesName = book.SeriesName,
+            Publisher = book.PublisherNavigation.Publishersname,
+            Image = GetImageData(book.Image),
+            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
+            YearOfPublication = book.YearOfPublication.ToString(),
+            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
+            Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
+            ThemeIds = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.ThemesId).ToList()
+        }).ToList();
+
+        var response = new
+        {
+            TotalBooks = totalBooks,
+            TotalPages = totalPages,
+            CurrentPage = page,
+            Books = booksData
+        };
+
+        return Ok(JsonSerializer.Serialize(response));
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(ex.Message);
+    }
+}
+
    [HttpGet("fillbookonpage")]
    public IActionResult GetAllBooksOnPage(int page = 1, int size = 20)
    {

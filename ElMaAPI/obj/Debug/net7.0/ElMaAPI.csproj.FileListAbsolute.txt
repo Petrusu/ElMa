@@ -53,3 +53,4 @@ C:\Users\Petrusu\Desktop\diplom\ElMa.API\ElMaAPI\obj\Debug\net7.0\refint\ElMaAPI
 C:\Users\Petrusu\Desktop\diplom\ElMa.API\ElMaAPI\obj\Debug\net7.0\ElMaAPI.pdb
 C:\Users\Petrusu\Desktop\diplom\ElMa.API\ElMaAPI\obj\Debug\net7.0\ElMaAPI.genruntimeconfig.cache
 C:\Users\Petrusu\Desktop\diplom\ElMa.API\ElMaAPI\obj\Debug\net7.0\ref\ElMaAPI.dll
+C:\Users\Petrusu\Desktop\diplom\ElMa.API\ElMaAPI\bin\Debug\net7.0\Newtonsoft.Json.dll
