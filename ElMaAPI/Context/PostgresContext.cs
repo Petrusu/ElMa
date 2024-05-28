@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ElMaAPI.Context;
 
-public partial class JvwaskwsContext : DbContext
+public partial class PostgresContext : DbContext
 {
-    public JvwaskwsContext()
+    public PostgresContext()
     {
     }
 
-    public JvwaskwsContext(DbContextOptions<JvwaskwsContext> options)
+    public PostgresContext(DbContextOptions<PostgresContext> options)
         : base(options)
     {
     }
@@ -46,32 +46,11 @@ public partial class JvwaskwsContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Server=balarama.db.elephantsql.com;Database=jvwaskws;Username=jvwaskws;password=mVMe_Cq431qfgIV8x_QhdKOaG-0hDKKm");
+        => optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=postgres;password=1812");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .HasPostgresExtension("btree_gin")
-            .HasPostgresExtension("btree_gist")
-            .HasPostgresExtension("citext")
-            .HasPostgresExtension("cube")
-            .HasPostgresExtension("dblink")
-            .HasPostgresExtension("dict_int")
-            .HasPostgresExtension("dict_xsyn")
-            .HasPostgresExtension("earthdistance")
-            .HasPostgresExtension("fuzzystrmatch")
-            .HasPostgresExtension("hstore")
-            .HasPostgresExtension("intarray")
-            .HasPostgresExtension("ltree")
-            .HasPostgresExtension("pg_stat_statements")
-            .HasPostgresExtension("pg_trgm")
-            .HasPostgresExtension("pgcrypto")
-            .HasPostgresExtension("pgrowlocks")
-            .HasPostgresExtension("pgstattuple")
-            .HasPostgresExtension("tablefunc")
-            .HasPostgresExtension("unaccent")
-            .HasPostgresExtension("uuid-ossp")
-            .HasPostgresExtension("xml2");
+        modelBuilder.HasPostgresExtension("pg_catalog", "adminpack");
 
         modelBuilder.Entity<Author>(entity =>
         {
@@ -91,11 +70,9 @@ public partial class JvwaskwsContext : DbContext
 
             entity.ToTable("bbk");
 
-            entity.HasIndex(e => e.BbkCode, "bbk_bbk_code_key").IsUnique();
-
             entity.Property(e => e.BbkId).HasColumnName("bbk_id");
             entity.Property(e => e.BbkCode)
-                .HasMaxLength(10)
+                .HasColumnType("character varying")
                 .HasColumnName("bbk_code");
         });
 
@@ -272,14 +249,12 @@ public partial class JvwaskwsContext : DbContext
 
             entity.ToTable("users");
 
-            entity.HasIndex(e => e.Username, "users_username_key").IsUnique();
-
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .HasColumnName("email");
             entity.Property(e => e.Username)
-                .HasMaxLength(16)
+                .HasColumnType("character varying")
                 .HasColumnName("username");
             entity.Property(e => e.Userpassword)
                 .HasMaxLength(255)
@@ -311,7 +286,9 @@ public partial class JvwaskwsContext : DbContext
             entity.ToTable("verifycode");
 
             entity.Property(e => e.CodeId).HasColumnName("code_id");
-            entity.Property(e => e.Code).HasColumnName("code");
+            entity.Property(e => e.Code)
+                .HasMaxLength(4)
+                .HasColumnName("code");
         });
 
         OnModelCreatingPartial(modelBuilder);

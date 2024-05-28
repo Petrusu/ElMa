@@ -7,5 +7,5 @@ public partial class Verifycode
 {
     public int CodeId { get; set; }
 
-    public int? Code { get; set; }
+    public string? Code { get; set; }
 }

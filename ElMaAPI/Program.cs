@@ -3,7 +3,7 @@ using ElMaAPI.Context;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddScoped<JvwaskwsContext>();
+builder.Services.AddScoped<PostgresContext>();
 
 // Add services to the container.
 

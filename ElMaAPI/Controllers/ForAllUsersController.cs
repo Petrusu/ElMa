@@ -19,11 +19,11 @@ namespace ElMaAPI.Controllers;
 public class ForAllUsersController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly JvwaskwsContext _context;
+    private readonly PostgresContext _context;
     private int TokenTimeoutMinutes = 5; // Время истечения срока действия токена в минутах
     private DateTime _tokenCreationTime;
     
-    public ForAllUsersController(JvwaskwsContext context, IConfiguration configuration)
+    public ForAllUsersController(PostgresContext context, IConfiguration configuration)
     {
         _context = context;
         _configuration = configuration;
@@ -99,7 +99,7 @@ public class ForAllUsersController : ControllerBase
     public IActionResult ChekEmail(int _code)
     {
         int userCode = _code;
-        bool codeExists = _context.Verifycodes.Any(vc => vc.Code == userCode);
+        bool codeExists = _context.Verifycodes.Any(vc => vc.Code == userCode.ToString());
 
         if (codeExists)
         {
@@ -111,71 +111,50 @@ public class ForAllUsersController : ControllerBase
         }
     }
     
-   [HttpGet("fillbookOnPageDesktop")]
-public async Task<IActionResult> GetAllBooksAsync(int page = 1, int size = 20)
-{
-    try
+    [HttpGet("fillbook")]
+    public async Task<IActionResult> GetAllBooksAsync()
     {
-        if (page <= 0 || size <= 0)
+        try
         {
-            return BadRequest("Page and size parameters must be greater than 0");
+            var query = _context.Books
+                .Include(b => b.BbkCodeNavigation)
+                .Include(b => b.PlaceOfPublicationNavigation)
+                .Include(b => b.PublisherNavigation)
+                .Include(b => b.BookAuthors)
+                .ThenInclude(ba => ba.Authors)
+                .Include(b => b.BookEditors)
+                .ThenInclude(be => be.Editors)
+                .Include(b => b.BookThemes)
+                .ThenInclude(bt => bt.Themes)
+                .AsQueryable();
+
+            if (!query.Any())
+            {
+                return NotFound(); // Книги не найдены
+            }
+
+            var booksData = query.ToList().Select(book => new BooksCard()
+            {
+                BookId = book.BookId,
+                BBK = book.BbkCodeNavigation.BbkCode,
+                Title = book.Title,
+                SeriesName = book.SeriesName,
+                Publisher = book.PublisherNavigation.Publishersname,
+                Image = GetImageData(book.Image), // Использование статического метода
+                PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
+                YearOfPublication = book.YearOfPublication.ToString(),
+                Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
+                Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
+                ThemeIds = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.ThemesId).ToList()
+            }).ToList();
+
+            return Ok(JsonSerializer.Serialize(booksData));
         }
-
-        var query = _context.Books
-            .Include(b => b.BbkCodeNavigation)
-            .Include(b => b.PlaceOfPublicationNavigation)
-            .Include(b => b.PublisherNavigation)
-            .Include(b => b.BookAuthors)
-            .ThenInclude(ba => ba.Authors)
-            .Include(b => b.BookEditors)
-            .ThenInclude(be => be.Editors)
-            .Include(b => b.BookThemes)
-            .ThenInclude(bt => bt.Themes)
-            .AsQueryable();
-
-        var totalBooks = query.Count();
-        var totalPages = (int)Math.Ceiling(totalBooks / (double)size);
-
-        var allBooks = query
-            .Skip((page - 1) * size)
-            .Take(size)
-            .ToList();
-
-        if (allBooks.Count == 0)
+        catch (Exception ex)
         {
-            return NotFound(); // Книги не найдены
+            return BadRequest(ex.Message);
         }
-
-        var booksData = allBooks.Select(book => new BooksCard()
-        {
-            BookId = book.BookId,
-            BBK = book.BbkCodeNavigation?.BbkCode,
-            Title = book.Title,
-            SeriesName = book.SeriesName,
-            Publisher = book.PublisherNavigation.Publishersname,
-            Image = GetImageData(book.Image),
-            PlaceOfPublication = book.PlaceOfPublicationNavigation.Publicationplasesname,
-            YearOfPublication = book.YearOfPublication.ToString(),
-            Authors = book.BookAuthors.Select(ba => ba.Authors.Authorsname).ToList(),
-            Editors = book.BookEditors.Select(be => be.Editors.Editorname).ToList(),
-            ThemeIds = _context.BookThemes.Where(b => b.BookId == book.BookId).Select(b => b.ThemesId).ToList()
-        }).ToList();
-
-        var response = new
-        {
-            TotalBooks = totalBooks,
-            TotalPages = totalPages,
-            CurrentPage = page,
-            Books = booksData
-        };
-
-        return Ok(JsonSerializer.Serialize(response));
     }
-    catch (Exception ex)
-    {
-        return BadRequest(ex.Message);
-    }
-}
 
    [HttpGet("fillbookonpage")]
    public IActionResult GetAllBooksOnPage(int page = 1, int size = 20)
@@ -396,14 +375,15 @@ public async Task<IActionResult> GetAllBooksAsync(int page = 1, int size = 20)
 
    //методы вывода изображения
    //метод возвращающий байты изображения
-   private byte[] GetImageData(string imageName)
+   private static byte[] GetImageData(string imageName)
    {
-       //получаем полный путь к изоброажению
-       string imagePath = Path.Combine("Upload//Files", imageName == "" ? "picture.png" : imageName);
+       // Получаем полный путь к изображению
+       string imagePath = Path.Combine("Upload//Files", string.IsNullOrEmpty(imageName) ? "picture.png" : imageName);
 
-       //читаем байты изображения
+       // Читаем байты изображения
        return System.IO.File.ReadAllBytes(imagePath);
    }
+
    //запрос на изменения пароля
    [HttpPut("changepassword")]
    public IActionResult ChangePassword(string password)
@@ -500,7 +480,7 @@ public async Task<IActionResult> GetAllBooksAsync(int page = 1, int size = 20)
 
         //генерация и сохранения кода в бд
         int code = GenerateRandomCode();
-        _context.Verifycodes.Add(new Verifycode{Code = code});
+        _context.Verifycodes.Add(new Verifycode{Code = code.ToString()});
         _context.SaveChanges();
         
         

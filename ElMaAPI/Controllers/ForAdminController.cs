@@ -8,10 +8,10 @@ namespace ElMaAPI.Controllers;
 public class ForAdminController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly JvwaskwsContext _context;
+    private readonly PostgresContext _context;
     private readonly IWebHostEnvironment _environment;
 
-    public ForAdminController(IConfiguration configuration, JvwaskwsContext context,
+    public ForAdminController(IConfiguration configuration, PostgresContext context,
         IWebHostEnvironment environment)
     {
         _context = context;
